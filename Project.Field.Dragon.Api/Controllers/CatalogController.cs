@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Project.Field.Dragon.Domain.Catalog; 
 using System.Collections.Generic;
+using Project.Field.Dragon.Data; 
+using Microsoft.EntityFrameworkCore; // 確保 'Include' 可以被識別
 
 namespace Project.Field.Dragon.Api.Controllers
 {
@@ -8,56 +10,95 @@ namespace Project.Field.Dragon.Api.Controllers
     [Route("[controller]")] 
     public class CatalogController : ControllerBase
     {
-        // 1. GetItems (取得所有產品)
+        private readonly StoreContext _db;
+
+        public CatalogController(StoreContext db)
+        {
+            _db = db;
+        }
+
         [HttpGet]
         public IActionResult GetItems()
         {
-            var items = new List<Item>()
-            {
-                new Item("Shirt", "Ohio State shirt.", "Nike", 29.99m),
-                new Item("Shorts", "Ohio State shorts.", "Nike", 44.99m)
-            };
-            return Ok(items);
+            return Ok(_db.Items);
         }
 
-        // 2. GetItem (依 Id 取得單一產品)
         [HttpGet("{id:int}")]
-        public ActionResult GetItem(int id)
+        public IActionResult GetItem(int id)
         {
-            var item = new Item("Shirt", "Ohio State shirt.", "Nike", 29.99m);
-            item.Id = id; 
+            var item = _db.Items.Find(id);
+            if (item == null)
+            {
+                return NotFound();
+            }
             return Ok(item);
         }
 
-        // 3. Post (建立新產品)
         [HttpPost]
         public IActionResult Post(Item item)
         {
-            return Created("/catalog/42", item); 
+            _db.Items.Add(item);
+            _db.SaveChanges();
+            return Created($"/catalog/{item.Id}", item);
         }
 
-        // 4. PostRating (為產品新增評價)
         [HttpPost("{id:int}/ratings")]
         public ActionResult PostRating(int id, [FromBody] Rating rating)
         {
-            var item = new Item("Shirt", "Ohio State shirt.", "Nike", 29.99m);
-            item.Id = id;
+            var item = _db.Items.Find(id);
+
+            if (item == null)
+            {
+                return NotFound();
+            }
+
             item.AddRating(rating);
+            _db.SaveChanges();
+
             return Ok(item);
         }
 
-        // 5. Put (更新產品) (Lab 4 第 14 頁)
         [HttpPut("{id:int}")]
-        public IActionResult Put(int id, Item item)
+        public IActionResult Put(int id, [FromBody] Item item)
         {
+            if (id != item.Id)
+            {
+                return BadRequest();
+            }
+
+            var itemFromDb = _db.Items.Find(id);
+
+            if (itemFromDb == null)
+            {
+                return NotFound();
+            }
+
+            itemFromDb.Name = item.Name;
+            itemFromDb.Description = item.Description;
+            itemFromDb.Brand = item.Brand;
+            itemFromDb.Price = item.Price;
+
+            _db.SaveChanges();
+
             return NoContent();
         }
 
-        // 6. Delete (刪除產品) (Lab 4 第 15 頁)
+        // 6. Delete (已修正 - 包含 Ratings)
         [HttpDelete("{id:int}")]
-        public ActionResult Delete(int id)
+        public IActionResult Delete(int id)
         {
-            return NoContent();
+            var item = _db.Items.Include(i => i.Ratings)
+                .FirstOrDefault(i => i.Id == id);
+
+            if (item == null)
+            {
+                return NotFound();
+            }
+
+            _db.Items.Remove(item);
+            _db.SaveChanges();
+
+            return Ok(); 
         }
     }
 }
