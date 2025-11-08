@@ -4,7 +4,8 @@ namespace Project.Field.Dragon.Domain.Catalog
 {
     public class Rating
     {
-        // 建構函式 (Constructor)
+        public int Id { get; set; }
+
         public Rating(int stars, string userName, string review)
         {
             if (stars < 1 || stars > 5)
@@ -22,7 +23,6 @@ namespace Project.Field.Dragon.Domain.Catalog
             this.Review = review;
         }
 
-        // 屬性 (Properties)
         public int Stars { get; set; }
         public string UserName { get; set; }
         public string Review { get; set; }
