@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Project.Field.Dragon.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Project.Field.Dragon.Api
 {
@@ -20,6 +22,10 @@ namespace Project.Field.Dragon.Api
             services.AddControllers();
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen();
+
+            services.AddDbContext<StoreContext>(options =>
+                options.UseSqlite("Data Source=../Registrar.sqlite",
+                b => b.MigrationsAssembly("Project.Field.Dragon.Api")));
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
