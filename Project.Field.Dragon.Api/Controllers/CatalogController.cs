@@ -1,15 +1,18 @@
 using Microsoft.AspNetCore.Mvc;
-using Project.Field.Dragon.Domain.Catalog; 
-using System.Collections.Generic;
-using Project.Field.Dragon.Data; 
-using Microsoft.EntityFrameworkCore; // 確保 'Include' 可以被識別
+using Microsoft.EntityFrameworkCore;
+using Project.Field.Dragon.Domain.Catalog;
+using Project.Field.Dragon.Data;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Project.Field.Dragon.Api.Controllers
 {
+    // 路由屬性，讓它映射到 /catalog
     [ApiController]
     [Route("[controller]")] 
     public class CatalogController : ControllerBase
     {
+        // 依賴注入 (Dependency Injection)
         private readonly StoreContext _db;
 
         public CatalogController(StoreContext db)
@@ -17,14 +20,16 @@ namespace Project.Field.Dragon.Api.Controllers
             _db = db;
         }
 
+        // 1. GET: /catalog (獲取所有 Item)
         [HttpGet]
         public IActionResult GetItems()
         {
             return Ok(_db.Items);
         }
 
+        // 2. GET: /catalog/{id} (根據 ID 獲取單個 Item)
         [HttpGet("{id:int}")]
-        public IActionResult GetItem(int id)
+        public ActionResult GetItem(int id)
         {
             var item = _db.Items.Find(id);
             if (item == null)
@@ -34,6 +39,7 @@ namespace Project.Field.Dragon.Api.Controllers
             return Ok(item);
         }
 
+        // 3. POST: /catalog (新增 Item)
         [HttpPost]
         public IActionResult Post(Item item)
         {
@@ -42,63 +48,52 @@ namespace Project.Field.Dragon.Api.Controllers
             return Created($"/catalog/{item.Id}", item);
         }
 
+        // 4. POST: /catalog/{id}/ratings (新增 Rating)
         [HttpPost("{id:int}/ratings")]
-        public ActionResult PostRating(int id, [FromBody] Rating rating)
+        public IActionResult PostRating(int id, [FromBody] Rating rating)
         {
             var item = _db.Items.Find(id);
-
             if (item == null)
             {
                 return NotFound();
             }
-
             item.AddRating(rating);
             _db.SaveChanges();
-
             return Ok(item);
         }
-
+        
+        // 5. PUT: /catalog/{id} (更新 Item)
         [HttpPut("{id:int}")]
-        public IActionResult Put(int id, [FromBody] Item item)
+        public ActionResult PutItem(int id, [FromBody] Item item)
         {
             if (id != item.Id)
             {
                 return BadRequest();
             }
 
-            var itemFromDb = _db.Items.Find(id);
-
-            if (itemFromDb == null)
+            if (_db.Items.Find(id) == null)
             {
                 return NotFound();
             }
 
-            itemFromDb.Name = item.Name;
-            itemFromDb.Description = item.Description;
-            itemFromDb.Brand = item.Brand;
-            itemFromDb.Price = item.Price;
-
+            _db.Entry(item).State = EntityState.Modified;
             _db.SaveChanges();
-
             return NoContent();
         }
-
-        // 6. Delete (已修正 - 包含 Ratings)
+        
+        // 6. DELETE: /catalog/{id} (刪除 Item)
         [HttpDelete("{id:int}")]
-        public IActionResult Delete(int id)
+        public ActionResult DeleteItem(int id)
         {
-            var item = _db.Items.Include(i => i.Ratings)
-                .FirstOrDefault(i => i.Id == id);
-
+            var item = _db.Items.Find(id);
             if (item == null)
             {
                 return NotFound();
             }
-
+            
             _db.Items.Remove(item);
             _db.SaveChanges();
-
-            return Ok(); 
+            return Ok();
         }
     }
 }
