@@ -1,0 +1,14 @@
+### 1. 取得萬能鑰匙 (Token)
+POST https://field-dragon-api-hsiangyu.us.auth0.com/oauth/token
+Content-Type: application/json
+
+{
+  "client_id": "aE4bS59SM9HXJBHujST4be1CgufmJjng",
+  "client_secret": "nV53l4skvyEhGBw5iAMTokLCR1FUQTEIubIpqlmd1lpAfYP9pqNF_Sawkn0ffVAK",
+  "audience": "https://field-dragon-api",
+  "grant_type": "client_credentials"
+}
+
+### 2. 測試刪除功能
+DELETE http://localhost:5246/catalog/3
+Authorization: Bearer <請把拿到的Token貼在這裡>

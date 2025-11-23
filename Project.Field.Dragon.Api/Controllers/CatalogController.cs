@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization; // 1. 加入授權功能的引用
 using Project.Field.Dragon.Domain.Catalog;
 using Project.Field.Dragon.Data;
 using System.Linq;
@@ -83,6 +84,7 @@ namespace Project.Field.Dragon.Api.Controllers
         
         // 6. DELETE: /catalog/{id} (刪除 Item)
         [HttpDelete("{id:int}")]
+        [Authorize("delete:catalog")] // 2. 加入這行：只有擁有 delete:catalog 權限的人才能刪除
         public ActionResult DeleteItem(int id)
         {
             var item = _db.Items.Find(id);
